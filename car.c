@@ -8,8 +8,18 @@
 #define DEPTH 32
 
 /*
-gcc -o car car.c `sdl-config --cflags --libs` && ./car
+gcc -o car car.c `sdl-config --cflags --libs` -lSDL_ttf && ./car
 */
+
+struct Car {
+	int direct; 	// Direction,  0 - Up, 1 - Right, 2 - Down, 3 - Left 
+	int x;			// X coord the left upper corner of car sprite
+	int y;			// Y coord the left upper corner of car sprite
+	int accelerate;	// 0 - stop car, 1 - move car
+	int speed;		// Coordinate addition when move in pixels
+};
+
+struct Car car;
 
 int target_x = 400;
 int target_y = 670;
@@ -114,17 +124,17 @@ void AddTarget(SDL_Surface* target, SDL_Surface* screen) {
 	SDL_BlitSurface( target, NULL, screen, &dest );
 }
 
-void MoveCar(int x, int y, int way, SDL_Surface* car, SDL_Surface* ground, SDL_Surface* target, SDL_Surface* screen) {
+void MoveCar(SDL_Surface* car_surface, SDL_Surface* ground, SDL_Surface* target, SDL_Surface* screen) {
 	SDL_Rect src;
 	SDL_Rect dest;
 	
-	src.x = way * 50;
+	src.x = car.direct * 50;
 	src.y = 0;
 	src.w = 50;
 	src.h = 50;
 	
-	dest.x = x;
-	dest.y = y;
+	dest.x = car.x;
+	dest.y = car.y;
 	dest.w = 50;
 	dest.h = 50;
 	
@@ -132,12 +142,12 @@ void MoveCar(int x, int y, int way, SDL_Surface* car, SDL_Surface* ground, SDL_S
 	
 	AddGround(ground, screen);
 	AddTarget(target, screen);
-    SDL_BlitSurface( car, &src, screen, &dest ); /* car */
+    SDL_BlitSurface( car_surface, &src, screen, &dest ); /* car */
     
-    int col = is_collision(x,y);
+    int col = is_collision(car.x,car.y);
     
     char* string[64];
-    snprintf(string, sizeof string, "x: %d y: %d coll: %d", x, y, col);
+    snprintf(string, sizeof string, "x: %d y: %d coll: %d", car.x, car.y, col);
     
     /* Text */
     TTF_Font* font = TTF_OpenFont("ARIAL.TTF", 20);
@@ -150,20 +160,28 @@ void MoveCar(int x, int y, int way, SDL_Surface* car, SDL_Surface* ground, SDL_S
     DrawScreen(screen);
 }
 
+/* Set default values for car */
+int init_car() {
+	car.direct 	= 0; /* Direction Up */
+	car.x 	= 600;
+	car.y 	= 50;
+	car.accelerate = 0; /* Stop */
+	car.speed = 4;
+}
+
 int main(int argc, char* argv[])
 {
-    SDL_Surface *screen, *tmp_bmp, *car, *ground, *target;
+    SDL_Surface *screen, *tmp_bmp, *car_surface, *ground, *target;
     SDL_Event event;
     
     TTF_Init();
+    
+    init_car();
+	
+	printf("%d\n", car.x);
   
     int exit_key = 0;
-    int car_way = 0;
-	int car_x = 600;
-	int car_y = 50;
-	int car_accelerate = 0;
-	int car_speed = 4;
-  
+    
     //Check video initialisation
     if (SDL_Init(SDL_INIT_VIDEO) < 0 ) return 1;
    
@@ -176,14 +194,14 @@ int main(int argc, char* argv[])
     
     /* Load car picture */
     tmp_bmp = SDL_LoadBMP( "img/car.bmp" );
-    car = SDL_DisplayFormat(tmp_bmp);
+    car_surface = SDL_DisplayFormat(tmp_bmp);
 	SDL_FreeSurface(tmp_bmp);
 	
 	/* Load ground picture */
 	tmp_bmp = SDL_LoadBMP( "img/ground.bmp" );
     ground = SDL_DisplayFormat(tmp_bmp);
 	SDL_FreeSurface(tmp_bmp);
-	SDL_SetColorKey( car, SDL_SRCCOLORKEY, 0xFF00FF );
+	SDL_SetColorKey( car_surface, SDL_SRCCOLORKEY, 0xFF00FF );
 	
 	/* Load targe picture */
 	tmp_bmp = SDL_LoadBMP( "img/target.bmp" );
@@ -191,32 +209,31 @@ int main(int argc, char* argv[])
 	SDL_FreeSurface(tmp_bmp);
 	SDL_SetColorKey( target, SDL_SRCCOLORKEY, 0xFF00FF );
 		
-	MoveCar(car_x, car_y, car_way, car, ground, target, screen);
+	MoveCar(car_surface, ground, target, screen);
 	   
     while(!exit_key) 
     {
 		SDL_Delay(1);
 		
-		if ( car_accelerate ) {
-			switch(car_way) {
+		if ( car.accelerate ) {
+			switch(car.direct) {
 				case 0:
-					car_y = car_y - car_speed;
-					
+					car.y = car.y - car.speed;
 					break;
 				case 1:
-					car_x = car_x + car_speed;
+					car.x = car.x + car.speed;
 					break;
 				case 2:
-					car_y = car_y + car_speed;
+					car.y = car.y + car.speed;
 					break;
 				case 3:
-					car_x = car_x - car_speed;
+					car.x = car.x - car.speed;
 					break;
 				default:
 					break;
 			}
 			
-			MoveCar(car_x, car_y, car_way, car, ground, target, screen);
+			MoveCar(car_surface, ground, target, screen);
 		}
 		
          while(SDL_PollEvent(&event)) 
@@ -227,23 +244,22 @@ int main(int argc, char* argv[])
 					switch(event.key.keysym.sym)
 					{
 						case SDLK_UP:
-							car_way = 0;
-							car_accelerate = 1;
+							car.direct = 0;
+							car.accelerate = 1;
 							break;
 						case SDLK_RIGHT:
-							car_way = 1;
-							car_accelerate = 1;
+							car.direct = 1;
+							car.accelerate = 1;
 							break;
 						case SDLK_DOWN:
-							car_way = 2;
-							car_accelerate = 1;
+							car.direct = 2;
+							car.accelerate = 1;
 							break;
 						case SDLK_LEFT:
-							car_way = 3;
-							car_accelerate = 1;
+							car.direct = 3;
+							car.accelerate = 1;
 							break;					
 						case SDLK_ESCAPE:
-							car_x--;
 							exit_key = 1;
 							break;
 						default:
@@ -251,7 +267,7 @@ int main(int argc, char* argv[])
 					}
 					break;
 				    case SDL_KEYUP:
-						car_accelerate = 0;
+						car.accelerate = 0;
 						break;
               }
          }
