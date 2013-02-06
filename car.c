@@ -33,31 +33,78 @@ struct Target {
 struct Car car;
 struct Target target;
 
-int coll_obj[5][4] = {
-	{0, 0, 850, 0},
-	{850, 0, 850, 850},
-	{850, 850, 0, 850},
-	{0, 0, 0, 850},
+/* Ground map */
+/*
+int grd[5][6] = {
+	{5,1,1,1,1,5},
+	{4,0,0,0,0,2},
+	{4,0,0,0,0,2},
+	{4,0,0,0,0,2},
+	{5,3,3,3,3,5}
 };
+*/
+
+/* tmp ground for easy borders detection */
+int grd[5][6] = {
+	{0,0,0,0,0,0},
+	{0,0,0,0,0,0},
+	{0,0,0,0,0,0},
+	{0,0,0,0,0,0},
+	{0,0,0,0,0,0}
+};
+
+SDL_Surface *screen, *ground;
+
+void init_ground() {
+	
+	/* Load ground picture */
+	ground = SDL_LoadBMP( "img/ground.bmp" );
+    ground = SDL_DisplayFormat(ground);
+}
+
+void draw_ground() {
+	
+	SDL_Rect src;
+	SDL_Rect dest;
+	
+	int grd_col = 0;
+	int grd_row = 0;
+	
+	for (grd_row = 0; grd_row < 5; grd_row++ ) {
+		for ( grd_col = 0; grd_col < 6; grd_col++ ) {
+			src.x = grd[grd_row][grd_col] * 150;
+			src.y = 0;
+			src.w = 150;
+			src.h = 150;
+			
+			dest.x = grd_col * 150;
+			dest.y = grd_row * 150;
+			dest.w = 150;
+			dest.h = 150;
+			
+			SDL_BlitSurface(ground, &src, screen, &dest );
+		};
+	}
+}
 
 /* Set default values for car */
 void init_car() {
 	
 	/* Car data */
 	car.direct 	= 0; /* Direction Up */
-	car.x 	= 600;
-	car.y 	= 50;
+	car.x 	= 450;
+	car.y 	= 300;
 	car.accelerate = 0; /* Stop */
-	car.speed = 4;
+	car.speed = 6;
 	
 	/* Load car picture */
     car.spr_car = SDL_LoadBMP( "img/car.bmp" );
     car.spr_car = SDL_DisplayFormat(car.spr_car);
+    SDL_SetColorKey( car.spr_car, SDL_SRCCOLORKEY, 0xFF00FF );
 }
 
 /* generate new position for target */
 void set_target() {
-	srand(time(NULL));
 	int x = rand() % 750;
 	int y = rand() % 650;
 	if ( x < 50 ) {
@@ -80,43 +127,7 @@ void init_target() {
 	set_target();
 }
 
-int is_collision(x,y) {
-	int min_x = x;
-	int max_x = x + 50;
-	int min_y = y;
-	int max_y = y + 50;
-	
-	int i;
-	int x_c = 0;
-	int y_c = 0;
-	
-	for (i = 0; i < sizeof(coll_obj); i++ ) {
-		if (min_x >= coll_obj[i][0] && min_x <= coll_obj[i][2]) {
-			x_c = 1;
-		}
-		if (max_x >= coll_obj[i][0] && max_x <= coll_obj[i][2]) {
-			x_c = 1;
-		}
-		if (min_y >= coll_obj[i][1] && min_y <= coll_obj[i][3]) {
-			y_c = 1;
-		}
-		if (max_y >= coll_obj[i][1] && max_y <= coll_obj[i][3]) {
-			y_c = 1;
-		}
-		
-		if (x_c && y_c){
-			return 1;
-		}
-		else {
-			x_c = 0;
-			y_c = 0;
-		}
-	}
-	
-	return 0;
-}
-
-void DrawScreen(SDL_Surface* screen)
+void DrawScreen()
 { 
   
     if( SDL_MUSTLOCK(screen) ) 
@@ -129,51 +140,7 @@ void DrawScreen(SDL_Surface* screen)
     SDL_Flip(screen); 
 }
 
-void AddGround(SDL_Surface* ground, SDL_Surface* screen) {
-	
-	/* Ground structure */
-	/*
-	int grd[5][6] = {
-		{5,1,1,1,1,5},
-		{4,0,0,0,0,2},
-		{4,0,0,0,0,2},
-		{4,0,0,0,0,2},
-		{5,3,3,3,3,5}
-	};
-	*/
-	/* tmp ground for easy borders detection */
-	int grd[5][6] = {
-		{0,0,0,0,0,0},
-		{0,0,0,0,0,0},
-		{0,0,0,0,0,0},
-		{0,0,0,0,0,0},
-		{0,0,0,0,0,0}
-	};
-	
-	SDL_Rect src;
-	SDL_Rect dest;
-	
-	int grd_col = 0;
-	int grd_row = 0;
-	
-	for (grd_row = 0; grd_row < 5; grd_row++ ) {
-		for ( grd_col = 0; grd_col < 6; grd_col++ ) {
-			src.x = grd[grd_row][grd_col] * 150;
-			src.y = 0;
-			src.w = 150;
-			src.h = 150;
-			
-			dest.x = grd_col * 150;
-			dest.y = grd_row * 150;
-			dest.w = 150;
-			dest.h = 150;
-			
-			SDL_BlitSurface( ground, &src, screen, &dest );
-		};
-	}
-}
-
-void MoveCar(SDL_Surface* ground, SDL_Surface* screen) {
+void move_car() {
 	SDL_Rect src;
 	SDL_Rect dest;
 	
@@ -208,9 +175,11 @@ void MoveCar(SDL_Surface* ground, SDL_Surface* screen) {
 	dest.w = 50;
 	dest.h = 50;
 	
+	/* Erase Screen */
 	SDL_FillRect(screen, NULL, 0x000000);
 	
-	AddGround(ground, screen);
+	/* Add ground */
+	draw_ground();
 	
 	/* Add target */
 	SDL_Rect trg_dest;
@@ -221,31 +190,28 @@ void MoveCar(SDL_Surface* ground, SDL_Surface* screen) {
 	/* Add car */
     SDL_BlitSurface( car.spr_car, &src, screen, &dest );
     
-    //int col = is_collision(car.x,car.y);
-    
-    char string[64];
+    //char string[64];
     //snprintf(string, sizeof string, "x: %d y: %d coll: %d", car.x, car.y, col);
-    snprintf(string, sizeof string, "x: %d y: %d", car.x, car.y);
+    //snprintf(string, sizeof string, "x: %d y: %d", car.x, car.y);
     
     /* Text */
-    TTF_Font* font = TTF_OpenFont("ARIAL.TTF", 20);
-	SDL_Color foregroundColor = { 255, 255, 255 };
-    SDL_Color backgroundColor = { 0, 0, 0 };
-	SDL_Surface* text = TTF_RenderText_Shaded(font, string, foregroundColor, backgroundColor);
-	SDL_Rect textLocation = { 960, 10, 0, 0 };
-	SDL_BlitSurface(text, NULL, screen, &textLocation);
+    //TTF_Font* font = TTF_OpenFont("ARIAL.TTF", 20);
+	//SDL_Color foregroundColor = { 255, 255, 255 };
+    //SDL_Color backgroundColor = { 0, 0, 0 };
+	//SDL_Surface* text = TTF_RenderText_Shaded(font, string, foregroundColor, backgroundColor);
+	//SDL_Rect textLocation = { 960, 10, 0, 0 };
+	//SDL_BlitSurface(text, NULL, screen, &textLocation);
     
     DrawScreen(screen);
 }
 
 int main(void)
 {
-    SDL_Surface *screen, *tmp_bmp, *ground;
     SDL_Event event;    
     
     TTF_Init();
 
-    int exit_key = 0;
+    srand(time(NULL));
     
     //Check video initialisation
     if (SDL_Init(SDL_INIT_VIDEO) < 0 ) return 1;
@@ -257,20 +223,17 @@ int main(void)
         return 1;
     }
     
+    init_ground();
     init_car();
     init_target();
-    
-	/* Load ground picture */
-	tmp_bmp = SDL_LoadBMP( "img/ground.bmp" );
-    ground = SDL_DisplayFormat(tmp_bmp);
-	SDL_FreeSurface(tmp_bmp);
-	SDL_SetColorKey( car.spr_car, SDL_SRCCOLORKEY, 0xFF00FF );
-		
-	MoveCar(ground, screen);
+    	
+	move_car();
+	
+	int exit_key = 0;
 	   
     while(!exit_key) 
     {
-		SDL_Delay(5);
+		SDL_Delay(10);
 		
 		if ( car.accelerate ) {
 			switch(car.direct) {
@@ -290,7 +253,7 @@ int main(void)
 					break;
 			}
 			
-			MoveCar(ground, screen);
+			move_car();
 		}
 		
          while(SDL_PollEvent(&event)) 
