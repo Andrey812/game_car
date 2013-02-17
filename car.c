@@ -130,7 +130,7 @@ void init_target() {
 	SDL_SetColorKey( target.spr_target, SDL_SRCCOLORKEY, 0xFF00FF );
 	
 	target.frame_num = 0;
-	target.frame_refresh_time = 500;
+	target.frame_refresh_time = 300;
 	target.frame_last_refresh = 0;
 	
 	set_target();
@@ -191,12 +191,17 @@ void move_car() {
 	draw_ground();
 	
 	/* Add target */
+	SDL_Rect trg_src;
 	SDL_Rect trg_dest;
-	if ( target.frame_num == 0 ) {
-		trg_dest.x = target.x;
-		trg_dest.y = target.y;
-	}
-	SDL_BlitSurface( target.spr_target, NULL, screen, &trg_dest );
+	
+	trg_src.x = target.frame_num * 40;
+	trg_src.y = 0;
+	trg_src.w = 40;
+	trg_src.h = 40;
+	trg_dest.x = target.x;
+	trg_dest.y = target.y;
+	
+	SDL_BlitSurface( target.spr_target, &trg_src, screen, &trg_dest );
 	
 	/* Add car */
     SDL_BlitSurface( car.spr_car, &src, screen, &dest );
@@ -244,20 +249,19 @@ int main(void)
 	   
     while(!exit_key) 
     {
-		SDL_Delay(10);
+		SDL_Delay(5);
 		
 		// Detect timer's events
 		Uint32 now;
 		now = SDL_GetTicks();
 		
+		// Target animation
 		if ( now - target.frame_last_refresh >= target.frame_refresh_time ) {
+				target.frame_num++;
 				
-				if ( target.frame_num == 0 ) {
-					target.frame_num = 1;
-				}
-				else {
+				if ( target.frame_num > 3 ) {
 					target.frame_num = 0;
-				};
+				}
 				
 				target.frame_last_refresh = now;
 				
