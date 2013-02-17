@@ -25,9 +25,12 @@ struct Car {
 
 /* Target "asterisk" data */
 struct Target {
-	int x;	// X coord the left upper corner of car sprite
-	int y;	// Y coord the left upper corner of car sprite
-	SDL_Surface *spr_target; //Sprite of target
+	int 				x;						// X coord the left upper corner of car sprite
+	int 				y;						// Y coord the left upper corner of car sprite
+	int 				frame_num; 				// Number of picture from set of pictures
+	Uint32 				frame_refresh_time; 	// Time of frame's refresh
+	Uint32 				frame_last_refresh; 	// Last refresh time
+	SDL_Surface *		spr_target; 			// Sprite of target
 };
 
 struct Car car;
@@ -90,12 +93,14 @@ void draw_ground() {
 /* Set default values for car */
 void init_car() {
 	
+	int c;
+	
 	/* Car data */
 	car.direct 	= 0; /* Direction Up */
 	car.x 	= 450;
 	car.y 	= 300;
 	car.accelerate = 0; /* Stop */
-	car.speed = 6;
+	car.speed = 3;
 	
 	/* Load car picture */
     car.spr_car = SDL_LoadBMP( "img/car.bmp" );
@@ -123,6 +128,10 @@ void init_target() {
 	target.spr_target = SDL_LoadBMP( "img/target.bmp" );
     target.spr_target = SDL_DisplayFormat(target.spr_target);
 	SDL_SetColorKey( target.spr_target, SDL_SRCCOLORKEY, 0xFF00FF );
+	
+	target.frame_num = 0;
+	target.frame_refresh_time = 500;
+	target.frame_last_refresh = 0;
 	
 	set_target();
 }
@@ -183,8 +192,10 @@ void move_car() {
 	
 	/* Add target */
 	SDL_Rect trg_dest;
-	trg_dest.x = target.x;
-	trg_dest.y = target.y;
+	if ( target.frame_num == 0 ) {
+		trg_dest.x = target.x;
+		trg_dest.y = target.y;
+	}
 	SDL_BlitSurface( target.spr_target, NULL, screen, &trg_dest );
 	
 	/* Add car */
@@ -234,6 +245,24 @@ int main(void)
     while(!exit_key) 
     {
 		SDL_Delay(10);
+		
+		// Detect timer's events
+		Uint32 now;
+		now = SDL_GetTicks();
+		
+		if ( now - target.frame_last_refresh >= target.frame_refresh_time ) {
+				
+				if ( target.frame_num == 0 ) {
+					target.frame_num = 1;
+				}
+				else {
+					target.frame_num = 0;
+				};
+				
+				target.frame_last_refresh = now;
+				
+				move_car();
+		}
 		
 		if ( car.accelerate ) {
 			switch(car.direct) {
