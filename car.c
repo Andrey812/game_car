@@ -37,23 +37,22 @@ struct Car car;
 struct Target target;
 
 /* Ground map */
-/*
-int grd[5][6] = {
-	{5,1,1,1,1,5},
-	{4,0,0,0,0,2},
-	{4,0,0,0,0,2},
-	{4,0,0,0,0,2},
-	{5,3,3,3,3,5}
-};
-*/
-
-/* tmp ground for easy borders detection */
-int grd[5][6] = {
-	{0,0,0,0,0,0},
-	{0,0,0,0,0,0},
-	{0,0,0,0,0,0},
-	{0,0,0,0,0,0},
-	{0,0,0,0,0,0}
+int grd[15][18] = {
+	{5,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,5},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2},
+	{5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5}
 };
 
 SDL_Surface *screen, *ground;
@@ -73,17 +72,17 @@ void draw_ground() {
 	int grd_col = 0;
 	int grd_row = 0;
 	
-	for (grd_row = 0; grd_row < 5; grd_row++ ) {
-		for ( grd_col = 0; grd_col < 6; grd_col++ ) {
-			src.x = grd[grd_row][grd_col] * 150;
+	for (grd_row = 0; grd_row < 15; grd_row++ ) {
+		for ( grd_col = 0; grd_col < 18; grd_col++ ) {
+			src.x = grd[grd_row][grd_col] * 50;
 			src.y = 0;
-			src.w = 150;
-			src.h = 150;
+			src.w = 50;
+			src.h = 50;
 			
-			dest.x = grd_col * 150;
-			dest.y = grd_row * 150;
-			dest.w = 150;
-			dest.h = 150;
+			dest.x = grd_col * 50;
+			dest.y = grd_row * 50;
+			dest.w = 50;
+			dest.h = 50;
 			
 			SDL_BlitSurface(ground, &src, screen, &dest );
 		};
@@ -149,30 +148,11 @@ void DrawScreen()
     SDL_Flip(screen); 
 }
 
-void move_car() {
+// Put all objects to screen
+// Generate common picture
+void ComposeScreen() {
 	SDL_Rect src;
 	SDL_Rect dest;
-	
-	/* simple temporary border detection */
-	if ( car.x < 0 ) {
-		car.x = 0;
-	}
-	if ( car.x > 850 ) {
-		car.x = 850;
-	}
-	if ( car.y < 0 ) {
-		car.y = 0;
-	}
-	if ( car.y > 700 ) {
-		car.y = 700;
-	}
-	
-	/* simple target capture detection */
-	if ( target.x + 20 >= car.x && target.x + 20 <= car.x + 50 
-		&& target.y + 20 >= car.y && target.y + 20 <= car.y + 50 ) 
-	{
-		set_target();
-	}
 	
 	src.x = car.direct * 50;
 	src.y = 0;
@@ -221,6 +201,48 @@ void move_car() {
     DrawScreen(screen);
 }
 
+//Change car position
+void move_car() {
+	
+	switch(car.direct) {
+		case 0:
+			car.y = car.y - car.speed;
+		break;
+			case 1:
+			car.x = car.x + car.speed;
+		break;
+			case 2:
+			car.y = car.y + car.speed;
+		break;
+			case 3:
+			car.x = car.x - car.speed;
+			break;
+		default:
+			break;
+	}
+	
+	/* simple temporary border detection */
+	if ( car.x < 0 ) {
+		car.x = 0;
+	}
+	if ( car.x > 850 ) {
+		car.x = 850;
+	}
+	if ( car.y < 0 ) {
+		car.y = 0;
+	}
+	if ( car.y > 700 ) {
+		car.y = 700;
+	}
+	
+	/* simple target capture detection */
+	if ( target.x + 20 >= car.x && target.x + 20 <= car.x + 50 
+		&& target.y + 20 >= car.y && target.y + 20 <= car.y + 50 ) 
+	{
+		set_target();
+	}
+}
+
 int main(void)
 {
     SDL_Event event;    
@@ -243,14 +265,13 @@ int main(void)
     init_car();
     init_target();
     	
-	move_car();
+	//move_car();
 	
 	int exit_key = 0;
+	int update_screen = 1;
 	   
     while(!exit_key) 
     {
-		SDL_Delay(5);
-		
 		// Detect timer's events
 		Uint32 now;
 		now = SDL_GetTicks();
@@ -265,28 +286,18 @@ int main(void)
 				
 				target.frame_last_refresh = now;
 				
-				move_car();
+				update_screen = 1;
 		}
 		
+		// Move car
 		if ( car.accelerate ) {
-			switch(car.direct) {
-				case 0:
-					car.y = car.y - car.speed;
-					break;
-				case 1:
-					car.x = car.x + car.speed;
-					break;
-				case 2:
-					car.y = car.y + car.speed;
-					break;
-				case 3:
-					car.x = car.x - car.speed;
-					break;
-				default:
-					break;
-			}
-			
 			move_car();
+			update_screen = 1;
+		}
+		
+		// Redraw screen for show changes
+		if ( update_screen ) {
+			ComposeScreen();
 		}
 		
          while(SDL_PollEvent(&event)) 
