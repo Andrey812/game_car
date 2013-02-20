@@ -1,3 +1,15 @@
+/* 
+DESCRIPTION:
+This is simple 2D game source code
+You drive the car using keyboard Up, Down, Right and Left arrows
+collecting astersk which appears randomly at different places of screen
+This game uses SDL library and developed under Linux 32bit platform
+
+Developer: Andrey Nikolaev
+Url: github.com/Andrey812/game_car
+
+gcc -o car car.c `sdl-config --cflags --libs` -lSDL_ttf && ./car
+*/
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
@@ -9,21 +21,17 @@
 #define BPP 4
 #define DEPTH 32
 
-/*
-gcc -o car car.c `sdl-config --cflags --libs` -lSDL_ttf && ./car
-*/
-
-/* Car data: coordinates, direction, speed */
+// Car data: coordinates, direction, speed
 struct Car {
-	int direct; 	// Direction,  0 - Up, 1 - Right, 2 - Down, 3 - Left 
-	int x;			// X coord the left upper corner of car sprite
-	int y;			// Y coord the left upper corner of car sprite
-	int accelerate;	// 0 - stop car, 1 - move car
-	int speed;		// Coordinate addition when move in pixels
-	SDL_Surface *spr_car; // Sprite of car
+	int direct; 								// Direction,  0 - Up, 1 - Right, 2 - Down, 3 - Left 
+	int x;										// X coord the left upper corner of car sprite
+	int y;										// Y coord the left upper corner of car sprite
+	int accelerate;								// 0 - stop car, 1 - move car
+	int speed;									// Coordinate addition when move in pixels
+	SDL_Surface *spr_car; 						// Sprite of car
 };
 
-/* Target "asterisk" data */
+// Target "asterisk" data
 struct Target {
 	int 				x;						// X coord the left upper corner of car sprite
 	int 				y;						// Y coord the left upper corner of car sprite
@@ -36,7 +44,7 @@ struct Target {
 struct Car car;
 struct Target target;
 
-/* Ground map */
+// Ground map
 int grd[15][18] = {
 	{5,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,5},
 	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2},
@@ -57,13 +65,14 @@ int grd[15][18] = {
 
 SDL_Surface *screen, *ground;
 
+// Prepare ground pieces picture
 void init_ground() {
 	
-	/* Load ground picture */
 	ground = SDL_LoadBMP( "img/ground.bmp" );
     ground = SDL_DisplayFormat(ground);
 }
 
+// Compile ground from pieces according ground map array
 void draw_ground() {
 	
 	SDL_Rect src;
@@ -89,25 +98,23 @@ void draw_ground() {
 	}
 }
 
-/* Set default values for car */
+// Set default values for car
 void init_car() {
 	
 	int c;
 	
-	/* Car data */
-	car.direct 	= 0; /* Direction Up */
+	car.direct 	= 0; 		//Direction "Up"
 	car.x 	= 450;
 	car.y 	= 300;
-	car.accelerate = 0; /* Stop */
+	car.accelerate = 0; 	//Car stopped
 	car.speed = 3;
 	
-	/* Load car picture */
     car.spr_car = SDL_LoadBMP( "img/car.bmp" );
     car.spr_car = SDL_DisplayFormat(car.spr_car);
     SDL_SetColorKey( car.spr_car, SDL_SRCCOLORKEY, 0xFF00FF );
 }
 
-/* generate new position for target */
+// Generate new position for target
 void set_target() {
 	int x = rand() % 750;
 	int y = rand() % 650;
@@ -121,9 +128,9 @@ void set_target() {
 	target.y = y;
 }
 
+// Load target pictures and set animation params
 void init_target() {
 	
-	/* Load target picture */
 	target.spr_target = SDL_LoadBMP( "img/target.bmp" );
     target.spr_target = SDL_DisplayFormat(target.spr_target);
 	SDL_SetColorKey( target.spr_target, SDL_SRCCOLORKEY, 0xFF00FF );
@@ -135,6 +142,7 @@ void init_target() {
 	set_target();
 }
 
+// Display screen
 void DrawScreen()
 { 
   
@@ -343,8 +351,3 @@ int main(void)
   
     return 0;
 }
-
-
-
-
-
