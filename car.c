@@ -1,7 +1,7 @@
 /* 
 DESCRIPTION:
 This is simple 2D game source code
-You drive the car using keyboard Up, Down, Right and Left arrows
+You drive the car using keyboard Up, Down, Right and Left arrows (ESC - exit)
 collecting astersk which appears randomly at different places of screen
 This game uses SDL library and developed under Linux 32bit platform
 
@@ -38,6 +38,7 @@ struct Target {
 	int 				frame_num; 				// Number of picture from set of pictures
 	Uint32 				frame_refresh_time; 	// Time of frame's refresh
 	Uint32 				frame_last_refresh; 	// Last refresh time
+	int					frames[2];				// Sprite frames
 	SDL_Surface *		spr_target; 			// Sprite of target
 };
 
@@ -136,8 +137,11 @@ void init_target() {
 	SDL_SetColorKey( target.spr_target, SDL_SRCCOLORKEY, 0xFF00FF );
 	
 	target.frame_num = 0;
-	target.frame_refresh_time = 300;
+	target.frame_refresh_time = 600;
 	target.frame_last_refresh = 0;
+	
+	target.frames[0] = 0;
+	target.frames[1] = 1;
 	
 	set_target();
 }
@@ -175,6 +179,8 @@ void ComposeScreen() {
 	/* Erase Screen */
 	SDL_FillRect(screen, NULL, 0x000000);
 	
+	
+	
 	/* Add ground */
 	draw_ground();
 	
@@ -182,7 +188,7 @@ void ComposeScreen() {
 	SDL_Rect trg_src;
 	SDL_Rect trg_dest;
 	
-	trg_src.x = target.frame_num * 40;
+	trg_src.x = target.frames[target.frame_num] * 40;
 	trg_src.y = 0;
 	trg_src.w = 40;
 	trg_src.h = 40;
@@ -277,7 +283,7 @@ int main(void)
 	
 	int exit_key = 0;
 	int update_screen = 1;
-	   
+	
     while(!exit_key) 
     {
 		// Detect timer's events
@@ -285,10 +291,10 @@ int main(void)
 		now = SDL_GetTicks();
 		
 		// Target animation
-		if ( now - target.frame_last_refresh >= target.frame_refresh_time ) {
+		if ( now - target.frame_last_refresh > target.frame_refresh_time ) {
 				target.frame_num++;
 				
-				if ( target.frame_num > 3 ) {
+				if ( target.frame_num >= sizeof(target.frames) / sizeof(int) ) {
 					target.frame_num = 0;
 				}
 				
@@ -306,6 +312,7 @@ int main(void)
 		// Redraw screen for show changes
 		if ( update_screen ) {
 			ComposeScreen();
+			update_screen = 0;
 		}
 		
          while(SDL_PollEvent(&event)) 
