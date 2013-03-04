@@ -64,13 +64,19 @@ int grd[15][18] = {
 	{8,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,7}
 };
 
-SDL_Surface *screen, *ground;
+SDL_Surface *screen, *ground, *dhb;
 
 // Prepare ground pieces picture
 void init_ground() {
 	
 	ground = SDL_LoadBMP( "img/ground.bmp" );
     ground = SDL_DisplayFormat(ground);
+}
+
+// Prepare dashboard pieces picture
+void init_dashboard() {
+	dhb = SDL_LoadBMP( "img/dashboard.bmp" );
+    dhb = SDL_DisplayFormat(dhb);
 }
 
 // Compile ground from pieces according ground map array
@@ -95,6 +101,76 @@ void draw_ground() {
 			dest.h = 50;
 			
 			SDL_BlitSurface(ground, &src, screen, &dest );
+		};
+	}
+}
+
+void draw_dashboard() {
+	SDL_Rect src;
+	SDL_Rect dest;
+	
+	int grd_row = 0;
+	int grd_col = 0;
+	int type = 4;
+	
+	for (grd_row = 0; grd_row < 75; grd_row++ ) {
+		for ( grd_col = 0; grd_col < 35; grd_col++ ) {
+			
+			if ( grd_row == 0 || grd_row == 10 ) {
+				
+				switch(grd_col) {
+					case 0:
+						type = 0;
+						break;
+					case 34:
+						type = 1;
+						break;
+					default:
+						type = 8;
+						break;
+				}
+			}
+			
+			if ( grd_row == 9 || grd_row == 74 ) {
+				
+				switch(grd_col) {
+					case 0:
+						type = 2;
+						break;
+					case 34:
+						type = 3;
+						break;
+					default:
+						type = 7;
+						break;
+				}
+			}
+			
+			if ( grd_row != 0 && grd_row != 9 && grd_row != 10 && grd_row != 74 ) {
+				switch(grd_col) {
+					case 0:
+						type = 5;
+						break;
+					case 34:
+						type = 6;
+						break;
+					default:
+						type = 4;
+						break;
+				}
+			}
+			
+			src.x = type * 10;
+			src.y = 0;
+			src.w = 10;
+			src.h = 10;
+			
+			dest.x = 904 + ( grd_col * 10 );
+			dest.y = grd_row * 10;
+			dest.w = 10;
+			dest.h = 10;
+			
+			SDL_BlitSurface(dhb, &src, screen, &dest );
 		};
 	}
 }
@@ -181,8 +257,9 @@ void ComposeScreen() {
 	
 	
 	
-	/* Add ground */
+	/* Add ground and dashboard background */
 	draw_ground();
+	draw_dashboard();
 	
 	/* Add target */
 	SDL_Rect trg_src;
@@ -276,6 +353,7 @@ int main(void)
     }
     
     init_ground();
+    init_dashboard();
     init_car();
     init_target();
     	
