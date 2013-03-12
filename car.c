@@ -23,12 +23,18 @@ gcc -o car car.c `sdl-config --cflags --libs` -lSDL_ttf && ./car
 
 // Car data: coordinates, direction, speed
 struct Car {
-	int direct; 								// Direction,  0 - Up, 1 - Right, 2 - Down, 3 - Left 
-	int x;										// X coord the left upper corner of car sprite
-	int y;										// Y coord the left upper corner of car sprite
-	int accelerate;								// 0 - stop car, 1 - move car
-	int speed;									// Coordinate addition when move in pixels
-	SDL_Surface *spr_car; 						// Sprite of car
+	int 				direct; 								// Direction,  0 - Up, 1 - Right, 2 - Down, 3 - Left 
+	int 				x;										// X coord the left upper corner of car sprite
+	int 				y;										// Y coord the left upper corner of car sprite
+	int 				accelerate;								// 0 - stop car, 1 - move car
+	int					default_speed;							// Coordinate addition when move in pixels (initial)
+	int 				speed;									// Coordinate addition when move in pixels (current)
+	int 				speed_up_cycles;						// Count of moving cycles before speed increasing
+	int					max_speed;								// Maximum car moving pixels limitation
+	int					current_speed_up_cycle;					// Counter for speed up cycle
+	Uint32 				move_refresh_time; 						// Delay for move
+	Uint32 				move_last_refresh; 						// Last time delay for move
+	SDL_Surface 		*spr_car; 								// Sprite of car
 };
 
 // Target "asterisk" data
@@ -44,7 +50,9 @@ struct Target {
 
 struct Dashboard {
 	SDL_Surface *		surf_dhb;				// Dashboard image compiled one time from pieces
+	SDL_Surface *		wheel_points_spr;		// Picture with wheel points
 	int 				need_update;			// Flag of needing update
+	int					points_count;			// Count of the collected wheel points
 };
 
 struct Ground {
@@ -117,6 +125,9 @@ void init_ground() {
 // Prepare dashboard compiled image
 void init_dashboard() {
 	
+	dashboard.points_count = 0;
+	
+	// Generate of the dashboard background
 	dashboard.surf_dhb = SDL_CreateRGBSurface(0,380,800,32,0,0,0,0);
 	
 	SDL_Surface *dhb_sprites;
@@ -194,6 +205,11 @@ void init_dashboard() {
 	
 	SDL_FreeSurface(dhb_sprites);
 	
+	// Load image for wheel points indicator
+	dashboard.wheel_points_spr = SDL_LoadBMP( "img/dashboard_wheel_points.bmp" );
+    dashboard.wheel_points_spr = SDL_DisplayFormat(dashboard.wheel_points_spr);
+    SDL_SetColorKey( dashboard.wheel_points_spr, SDL_SRCCOLORKEY, 0xFF00FF );
+	
 	dashboard.need_update = 1;
 }
 
@@ -211,7 +227,30 @@ void draw_ground() {
 // Copy dashboard surface to screen surface
 void draw_dashboard() {
 	
+	// Update collected wheel points indicator
+	SDL_Rect src;
 	SDL_Rect dest;
+	
+	src.x = 40;
+	src.y = 0;
+	src.w = 40;
+	src.h = 40;
+	
+	int counter;
+	
+	for ( counter = 0; counter < 8; counter++ ) {
+		
+		if ( counter >= dashboard.points_count ) {
+			src.x = 0;
+		}
+		
+		dest.x = 10 + 40 * counter;
+		dest.y = 30;
+		
+		SDL_BlitSurface(dashboard.wheel_points_spr, &src, dashboard.surf_dhb, &dest );
+	};
+	
+	// Add dashboard background
 	
 	dest.x = 904;
 	dest.y = 0;
@@ -224,11 +263,16 @@ void draw_dashboard() {
 // Set default values for car
 void init_car() {
 	
-	car.direct 	= 0; 		//Direction "Up"
+	car.direct 	= 0; 				//Direction "Up"
 	car.x 	= 450;
 	car.y 	= 300;
-	car.accelerate = 0; 	//Car stopped
-	car.speed = 3;
+	car.speed_up_cycles = 40;
+	car.current_speed_up_cycle = 0;
+	car.accelerate = 0; 			//Car stopped
+	car.default_speed = 2;
+	car.speed = 2;
+	car.max_speed = 6;
+	car.move_refresh_time = 8; 		//Greater - slowly car
 	
     car.spr_car = SDL_LoadBMP( "img/car.bmp" );
     car.spr_car = SDL_DisplayFormat(car.spr_car);
@@ -339,6 +383,14 @@ void ComposeScreen() {
 //Change car position
 void move_car() {
 	
+	car.current_speed_up_cycle++;
+	
+	if ( car.current_speed_up_cycle > car.speed_up_cycles 
+		&& car.speed < car.max_speed ) {
+		car.speed++;
+		car.current_speed_up_cycle = 0;
+	}
+	
 	switch(car.direct) {
 		case 0:
 			car.y = car.y - car.speed;
@@ -374,6 +426,8 @@ void move_car() {
 	if ( target.x + 20 >= car.x && target.x + 20 <= car.x + 50 
 		&& target.y + 20 >= car.y && target.y + 20 <= car.y + 50 ) 
 	{
+		dashboard.points_count++;
+		dashboard.need_update = 1;
 		set_target();
 	}
 }
@@ -425,9 +479,12 @@ int main(void)
 		
 		// Move car
 		if ( car.accelerate ) {
-			move_car();
-			update_screen = 1;
-			ground.need_update = 1;
+			if ( now - car.move_last_refresh > car.move_refresh_time ) {
+				move_car();
+				update_screen = 1;
+				ground.need_update = 1;
+				car.move_last_refresh = now;
+			}
 		}
 		
 		// Redraw screen for show changes
@@ -468,6 +525,8 @@ int main(void)
 					break;
 				    case SDL_KEYUP:
 						car.accelerate = 0;
+						car.current_speed_up_cycle = 0;
+						car.speed = car.default_speed;
 						break;
               }
          }
