@@ -42,8 +42,15 @@ struct Target {
 	SDL_Surface *		spr_target; 			// Sprite of target
 };
 
-struct Car car;
-struct Target target;
+struct Dashboard {
+	SDL_Surface *		surf_dhb;				// Dashboard image compiled one time from pieces
+	int 				need_update;			// Flag of needing update
+};
+
+struct Ground {
+	SDL_Surface *		surf_grd;				// Bacground image compiled one time from pieces
+	int 				need_update;			// Flag of needing update
+};
 
 // Ground map
 int grd[15][18] = {
@@ -64,24 +71,23 @@ int grd[15][18] = {
 	{8,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,7}
 };
 
-SDL_Surface *screen, *ground, *dhb;
+struct Car car;
+struct Target target;
+struct Dashboard dashboard;
+struct Ground ground;
+
+SDL_Surface *screen; // Main surface for displaying
 
 // Prepare ground pieces picture
 void init_ground() {
 	
-	ground = SDL_LoadBMP( "img/ground.bmp" );
-    ground = SDL_DisplayFormat(ground);
-}
-
-// Prepare dashboard pieces picture
-void init_dashboard() {
-	dhb = SDL_LoadBMP( "img/dashboard.bmp" );
-    dhb = SDL_DisplayFormat(dhb);
-}
-
-// Compile ground from pieces according ground map array
-void draw_ground() {
+	ground.surf_grd = SDL_CreateRGBSurface(0,900,800,32,0,0,0,0);
 	
+	SDL_Surface *grd_sprites;
+	
+	grd_sprites = SDL_LoadBMP( "img/ground.bmp" );
+    grd_sprites = SDL_DisplayFormat(grd_sprites);
+    
 	SDL_Rect src;
 	SDL_Rect dest;
 	
@@ -100,13 +106,25 @@ void draw_ground() {
 			dest.w = 50;
 			dest.h = 50;
 			
-			SDL_BlitSurface(ground, &src, screen, &dest );
+			SDL_BlitSurface(grd_sprites, &src, ground.surf_grd, &dest );
 		};
 	}
+	SDL_FreeSurface(grd_sprites);
+	ground.need_update = 1;
+    
 }
 
-void draw_dashboard() {
-	SDL_Rect src;
+// Prepare dashboard compiled image
+void init_dashboard() {
+	
+	dashboard.surf_dhb = SDL_CreateRGBSurface(0,380,800,32,0,0,0,0);
+	
+	SDL_Surface *dhb_sprites;
+	
+	dhb_sprites = SDL_LoadBMP( "img/dashboard.bmp" );
+    dhb_sprites = SDL_DisplayFormat(dhb_sprites);
+    
+    SDL_Rect src;
 	SDL_Rect dest;
 	
 	int grd_row = 0;
@@ -165,20 +183,46 @@ void draw_dashboard() {
 			src.w = 10;
 			src.h = 10;
 			
-			dest.x = 904 + ( grd_col * 10 );
+			dest.x = grd_col * 10;
 			dest.y = grd_row * 10;
 			dest.w = 10;
 			dest.h = 10;
 			
-			SDL_BlitSurface(dhb, &src, screen, &dest );
+			SDL_BlitSurface(dhb_sprites, &src, dashboard.surf_dhb, &dest );
 		};
 	}
+	
+	SDL_FreeSurface(dhb_sprites);
+	
+	dashboard.need_update = 1;
+}
+
+// Copy ground surface to screen surface
+void draw_ground() {
+	
+	SDL_Rect dest;
+	
+	SDL_BlitSurface(ground.surf_grd, NULL, screen, NULL );
+	
+	ground.need_update = 0;
+
+}
+
+// Copy dashboard surface to screen surface
+void draw_dashboard() {
+	
+	SDL_Rect dest;
+	
+	dest.x = 904;
+	dest.y = 0;
+	
+	SDL_BlitSurface(dashboard.surf_dhb, NULL, screen, &dest );
+	
+	dashboard.need_update = 0;
 }
 
 // Set default values for car
 void init_car() {
-	
-	int c;
 	
 	car.direct 	= 0; 		//Direction "Up"
 	car.x 	= 450;
@@ -189,6 +233,7 @@ void init_car() {
     car.spr_car = SDL_LoadBMP( "img/car.bmp" );
     car.spr_car = SDL_DisplayFormat(car.spr_car);
     SDL_SetColorKey( car.spr_car, SDL_SRCCOLORKEY, 0xFF00FF );
+
 }
 
 // Generate new position for target
@@ -252,14 +297,13 @@ void ComposeScreen() {
 	dest.w = 50;
 	dest.h = 50;
 	
-	/* Erase Screen */
-	SDL_FillRect(screen, NULL, 0x000000);
+	if ( ground.need_update ) {
+		draw_ground();
+	}
 	
-	
-	
-	/* Add ground and dashboard background */
-	draw_ground();
-	draw_dashboard();
+	if ( dashboard.need_update ) {
+		draw_dashboard();
+	}
 	
 	/* Add target */
 	SDL_Rect trg_src;
@@ -356,8 +400,6 @@ int main(void)
     init_dashboard();
     init_car();
     init_target();
-    	
-	//move_car();
 	
 	int exit_key = 0;
 	int update_screen = 1;
@@ -385,6 +427,7 @@ int main(void)
 		if ( car.accelerate ) {
 			move_car();
 			update_screen = 1;
+			ground.need_update = 1;
 		}
 		
 		// Redraw screen for show changes
