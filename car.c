@@ -51,8 +51,12 @@ struct Target {
 struct Dashboard {
 	SDL_Surface *		surf_dhb;				// Dashboard image compiled one time from pieces
 	SDL_Surface *		wheel_points_spr;		// Picture with wheel points
+	SDL_Surface *		damages_spr;			// Picture for damage value visualization
 	int 				need_update;			// Flag of needing update
 	int					points_count;			// Count of the collected wheel points
+	int					max_damage;				// Damage points
+	int					curr_damage;			// Current damage counter
+	int					permit_dmg;				// flag, can damage be updated or not (for prevent multiple damages by one object)
 };
 
 struct Ground {
@@ -126,6 +130,10 @@ void init_ground() {
 void init_dashboard() {
 	
 	dashboard.points_count = 0;
+	
+	dashboard.max_damage = 5;
+	dashboard.curr_damage = 0;
+	dashboard.permit_dmg = 1;
 	
 	// Generate of the dashboard background
 	dashboard.surf_dhb = SDL_CreateRGBSurface(0,380,800,32,0,0,0,0);
@@ -209,6 +217,12 @@ void init_dashboard() {
 	dashboard.wheel_points_spr = SDL_LoadBMP( "img/dashboard_wheel_points.bmp" );
     dashboard.wheel_points_spr = SDL_DisplayFormat(dashboard.wheel_points_spr);
     SDL_SetColorKey( dashboard.wheel_points_spr, SDL_SRCCOLORKEY, 0xFF00FF );
+    
+    // Load image for damage visualization
+    dashboard.damages_spr = SDL_LoadBMP( "img/dashboard_car_damage.bmp" );
+    dashboard.damages_spr = SDL_DisplayFormat(dashboard.damages_spr);
+    SDL_SetColorKey( dashboard.damages_spr, SDL_SRCCOLORKEY, 0xFF00FF );
+    
 	
 	dashboard.need_update = 1;
 }
@@ -227,9 +241,32 @@ void draw_ground() {
 // Copy dashboard surface to screen surface
 void draw_dashboard() {
 	
-	// Update collected wheel points indicator
 	SDL_Rect src;
 	SDL_Rect dest;
+	
+	// Update car damage inicator
+	int dmg_counter = 0;
+	int dmg_k = 0;
+	for ( dmg_counter = 0; dmg_counter < dashboard.max_damage; dmg_counter++ ) {
+		
+		if ( dashboard.curr_damage > dmg_counter ) {
+			dmg_k = 125;
+		}
+		else {
+			dmg_k = 0;
+		}
+		src.x = 125 / dashboard.max_damage * dmg_counter + dmg_k ;
+		src.y = 0;
+		src.w = 125 / dashboard.max_damage;
+		src.h = 75;
+		
+		dest.x = 50 + ( 125 / dashboard.max_damage ) * dmg_counter;
+		dest.y = 130;
+		
+		SDL_BlitSurface(dashboard.damages_spr, &src, dashboard.surf_dhb, &dest );
+	}
+	
+	// Update collected wheel points indicator
 	
 	src.x = 40;
 	src.y = 0;
@@ -408,18 +445,30 @@ void move_car() {
 			break;
 	}
 	
+	int damage_happened = 0;
+	
 	/* simple temporary border detection */
 	if ( car.x < 10 ) {
 		car.x = 10;
+		damage_happened = 1;
 	}
 	if ( car.x > 840 ) {
 		car.x = 840;
+		damage_happened = 1;
 	}
 	if ( car.y < 10 ) {
 		car.y = 10;
+		damage_happened = 1;
 	}
 	if ( car.y > 690 ) {
 		car.y = 690;
+		damage_happened = 1;
+	}
+	
+	if ( damage_happened && dashboard.permit_dmg ) {
+		dashboard.curr_damage++;
+		dashboard.permit_dmg = 0;
+		dashboard.need_update = 1;
 	}
 	
 	/* simple target capture detection */
@@ -527,6 +576,7 @@ int main(void)
 						car.accelerate = 0;
 						car.current_speed_up_cycle = 0;
 						car.speed = car.default_speed;
+						dashboard.permit_dmg = 1;
 						break;
               }
          }
