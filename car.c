@@ -23,45 +23,45 @@ gcc -o car car.c `sdl-config --cflags --libs` -lSDL_ttf && ./car
 
 // Car data: coordinates, direction, speed
 struct Car {
-	int 				direct; 								// Direction,  0 - Up, 1 - Right, 2 - Down, 3 - Left 
-	int 				x;										// X coord the left upper corner of car sprite
-	int 				y;										// Y coord the left upper corner of car sprite
-	int 				accelerate;								// 0 - stop car, 1 - move car
-	int					default_speed;							// Coordinate addition when move in pixels (initial)
-	int 				speed;									// Coordinate addition when move in pixels (current)
-	int 				speed_up_cycles;						// Count of moving cycles before speed increasing
-	int					max_speed;								// Maximum car moving pixels limitation
-	int					current_speed_up_cycle;					// Counter for speed up cycle
-	Uint32 				move_refresh_time; 						// Delay for move
-	Uint32 				move_last_refresh; 						// Last time delay for move
-	SDL_Surface 		*spr_car; 								// Sprite of car
+	int 		direct;				// Direction,  0 - Up, 1 - Right, 2 - Down, 3 - Left 
+	int 		x;				// X coord the left upper corner of car sprite
+	int 		y;				// Y coord the left upper corner of car sprite
+	int 		accelerate;			// 0 - stop car, 1 - move car
+	int		default_speed;			// Coordinate addition when move in pixels (initial)
+	int 		speed;				// Coordinate addition when move in pixels (current)
+	int 		speed_up_cycles;		// Count of moving cycles before speed increasing
+	int		max_speed;			// Maximum car moving pixels limitation
+	int		current_speed_up_cycle;		// Counter for speed up cycle
+	Uint32 		move_refresh_time; 		// Delay for move
+	Uint32 		move_last_refresh; 		// Last time delay for move
+	SDL_Surface 	*spr_car; 			// Sprite of car
 };
 
-// Target "asterisk" data
+// Target data (object that car must catch on the map)
 struct Target {
-	int 				x;						// X coord the left upper corner of car sprite
-	int 				y;						// Y coord the left upper corner of car sprite
-	int 				frame_num; 				// Number of picture from set of pictures
-	Uint32 				frame_refresh_time; 	// Time of frame's refresh
-	Uint32 				frame_last_refresh; 	// Last refresh time
-	int					frames[2];				// Sprite frames
-	SDL_Surface *		spr_target; 			// Sprite of target
+	int 		x;			// X coord the left upper corner of car sprite
+	int 		y;			// Y coord the left upper corner of car sprite
+	int 		frame_num; 		// Number of picture from set of pictures
+	Uint32 		frame_refresh_time; 	// Time of frame's refresh
+	Uint32 		frame_last_refresh; 	// Last refresh time
+	int		frames[2];		// Sprite frames
+	SDL_Surface *	spr_target; 		// Sprite of target
 };
 
 struct Dashboard {
-	SDL_Surface *		surf_dhb;				// Dashboard image compiled one time from pieces
-	SDL_Surface *		wheel_points_spr;		// Picture with wheel points
-	SDL_Surface *		damages_spr;			// Picture for damage value visualization
-	int 				need_update;			// Flag of needing update
-	int					points_count;			// Count of the collected wheel points
-	int					max_damage;				// Damage points
-	int					curr_damage;			// Current damage counter
-	int					permit_dmg;				// flag, can damage be updated or not (for prevent multiple damages by one object)
+	SDL_Surface *	surf_dhb;		// Dashboard image compiled one time from pieces
+	SDL_Surface *	wheel_points_spr;	// Picture with wheel points
+	SDL_Surface *	damages_spr;		// Picture for damage value visualization
+	int 		need_update;		// Flag of needing update
+	int		points_count;		// Count of the collected wheel points
+	int		max_damage;		// Damage points
+	int		curr_damage;		// Current damage counter
+	int		permit_dmg;		// flag, can damage be updated or not (for prevent multiple damages by one object)
 };
 
 struct Ground {
-	SDL_Surface *		surf_grd;				// Bacground image compiled one time from pieces
-	int 				need_update;			// Flag of needing update
+	SDL_Surface *	surf_grd;		// Bacground image compiled one time from pieces
+	int 		need_update;		// Flag of update needed
 };
 
 // Ground map
@@ -98,7 +98,7 @@ void init_ground() {
 	SDL_Surface *grd_sprites;
 	
 	grd_sprites = SDL_LoadBMP( "img/ground.bmp" );
-    grd_sprites = SDL_DisplayFormat(grd_sprites);
+    	grd_sprites = SDL_DisplayFormat(grd_sprites);
     
 	SDL_Rect src;
 	SDL_Rect dest;
@@ -131,9 +131,9 @@ void init_dashboard() {
 	
 	dashboard.points_count = 0;
 	
-	dashboard.max_damage = 5;
-	dashboard.curr_damage = 0;
-	dashboard.permit_dmg = 1;
+	dashboard.max_damage 	= 5;
+	dashboard.curr_damage 	= 0;
+	dashboard.permit_dmg 	= 1;
 	
 	// Generate of the dashboard background
 	dashboard.surf_dhb = SDL_CreateRGBSurface(0,380,800,32,0,0,0,0);
@@ -141,9 +141,9 @@ void init_dashboard() {
 	SDL_Surface *dhb_sprites;
 	
 	dhb_sprites = SDL_LoadBMP( "img/dashboard.bmp" );
-    dhb_sprites = SDL_DisplayFormat(dhb_sprites);
+    	dhb_sprites = SDL_DisplayFormat(dhb_sprites);
     
-    SDL_Rect src;
+    	SDL_Rect src;
 	SDL_Rect dest;
 	
 	int grd_row = 0;
@@ -153,7 +153,7 @@ void init_dashboard() {
 	for (grd_row = 0; grd_row < 75; grd_row++ ) {
 		for ( grd_col = 0; grd_col < 35; grd_col++ ) {
 			
-			if ( grd_row == 0 || grd_row == 10 ) {
+			if ( grd_row == 0 || grd_row == 10 || grd_row == 23 ) {
 				
 				switch(grd_col) {
 					case 0:
@@ -168,7 +168,7 @@ void init_dashboard() {
 				}
 			}
 			
-			if ( grd_row == 9 || grd_row == 74 ) {
+			if ( grd_row == 9 || grd_row == 22 || grd_row == 74 ) {
 				
 				switch(grd_col) {
 					case 0:
@@ -183,7 +183,8 @@ void init_dashboard() {
 				}
 			}
 			
-			if ( grd_row != 0 && grd_row != 9 && grd_row != 10 && grd_row != 74 ) {
+			if ( grd_row != 0 && grd_row != 9 && grd_row != 10 && grd_row != 74
+				&& grd_row != 22 && grd_row != 23) {
 				switch(grd_col) {
 					case 0:
 						type = 5;
@@ -215,15 +216,14 @@ void init_dashboard() {
 	
 	// Load image for wheel points indicator
 	dashboard.wheel_points_spr = SDL_LoadBMP( "img/dashboard_wheel_points.bmp" );
-    dashboard.wheel_points_spr = SDL_DisplayFormat(dashboard.wheel_points_spr);
-    SDL_SetColorKey( dashboard.wheel_points_spr, SDL_SRCCOLORKEY, 0xFF00FF );
+    	dashboard.wheel_points_spr = SDL_DisplayFormat(dashboard.wheel_points_spr);
+    	SDL_SetColorKey( dashboard.wheel_points_spr, SDL_SRCCOLORKEY, 0xFF00FF );
     
-    // Load image for damage visualization
-    dashboard.damages_spr = SDL_LoadBMP( "img/dashboard_car_damage.bmp" );
-    dashboard.damages_spr = SDL_DisplayFormat(dashboard.damages_spr);
-    SDL_SetColorKey( dashboard.damages_spr, SDL_SRCCOLORKEY, 0xFF00FF );
-    
-	
+    	// Load image for damage visualization
+    	dashboard.damages_spr = SDL_LoadBMP( "img/dashboard_car_damage.bmp" );
+    	dashboard.damages_spr = SDL_DisplayFormat(dashboard.damages_spr);
+    	SDL_SetColorKey( dashboard.damages_spr, SDL_SRCCOLORKEY, 0xFF00FF );
+    	
 	dashboard.need_update = 1;
 }
 
@@ -300,16 +300,16 @@ void draw_dashboard() {
 // Set default values for car
 void init_car() {
 	
-	car.direct 	= 0; 				//Direction "Up"
-	car.x 	= 450;
-	car.y 	= 300;
-	car.speed_up_cycles = 40;
-	car.current_speed_up_cycle = 0;
-	car.accelerate = 0; 			//Car stopped
-	car.default_speed = 2;
-	car.speed = 2;
-	car.max_speed = 6;
-	car.move_refresh_time = 8; 		//Greater - slowly car
+	car.direct 			= 0;	//Direction "Up"
+	car.x 				= 450;
+	car.y 				= 300;
+	car.speed_up_cycles 		= 40;
+	car.current_speed_up_cycle 	= 0;
+	car.accelerate 			= 0; 	//Car stopped
+	car.default_speed 		= 2;
+	car.speed 			= 2;
+	car.max_speed 			= 6;
+	car.move_refresh_time 		= 8; 	//Greater - slowly car
 	
     car.spr_car = SDL_LoadBMP( "img/car.bmp" );
     car.spr_car = SDL_DisplayFormat(car.spr_car);
@@ -335,7 +335,7 @@ void set_target() {
 void init_target() {
 	
 	target.spr_target = SDL_LoadBMP( "img/target.bmp" );
-    target.spr_target = SDL_DisplayFormat(target.spr_target);
+    	target.spr_target = SDL_DisplayFormat(target.spr_target);
 	SDL_SetColorKey( target.spr_target, SDL_SRCCOLORKEY, 0xFF00FF );
 	
 	target.frame_num = 0;
@@ -400,21 +400,21 @@ void ComposeScreen() {
 	SDL_BlitSurface( target.spr_target, &trg_src, screen, &trg_dest );
 	
 	/* Add car */
-    SDL_BlitSurface( car.spr_car, &src, screen, &dest );
+    	SDL_BlitSurface( car.spr_car, &src, screen, &dest );
     
-    //char string[64];
-    //snprintf(string, sizeof string, "x: %d y: %d coll: %d", car.x, car.y, col);
-    //snprintf(string, sizeof string, "x: %d y: %d", car.x, car.y);
+    	//char string[64];
+    	//snprintf(string, sizeof string, "x: %d y: %d coll: %d", car.x, car.y, col);
+    	//snprintf(string, sizeof string, "x: %d y: %d", car.x, car.y);
     
-    /* Text */
-    //TTF_Font* font = TTF_OpenFont("ARIAL.TTF", 20);
+    	/* Text */
+    	//TTF_Font* font = TTF_OpenFont("ARIAL.TTF", 20);
 	//SDL_Color foregroundColor = { 255, 255, 255 };
-    //SDL_Color backgroundColor = { 0, 0, 0 };
+    	//SDL_Color backgroundColor = { 0, 0, 0 };
 	//SDL_Surface* text = TTF_RenderText_Shaded(font, string, foregroundColor, backgroundColor);
 	//SDL_Rect textLocation = { 960, 10, 0, 0 };
 	//SDL_BlitSurface(text, NULL, screen, &textLocation);
     
-    DrawScreen(screen);
+    	DrawScreen(screen);
 }
 
 //Change car position
